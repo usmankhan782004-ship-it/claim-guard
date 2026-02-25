@@ -12,6 +12,7 @@ import {
     Tag,
     Sparkles,
 } from "lucide-react";
+import Link from "next/link";
 import ScanningAnimation from "./ScanningAnimation";
 import AppealLetterPreview from "./AppealLetterPreview";
 import CategorySelector from "./CategorySelector";
@@ -155,15 +156,25 @@ export default function DiagnosisScreen() {
                         </div>
                     </div>
 
-                    <button
-                        onClick={handleRunDemo}
-                        disabled={screen === "scanning" || !category}
-                        id="run-diagnosis-btn"
-                        className="btn-primary text-sm flex items-center gap-2 disabled:opacity-50"
-                    >
-                        <Zap className="w-4 h-4" />
-                        <span>{screen === "idle" ? "Run Demo Diagnosis" : "Run Again"}</span>
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <Link
+                            href="/pricing"
+                            className="text-sm text-gray-400 hover:text-emerald-400 transition-colors flex items-center gap-1.5 border border-white/[0.08] rounded-xl px-4 py-2.5 hover:border-emerald-500/30"
+                            id="view-pricing-btn"
+                        >
+                            <DollarSign className="w-4 h-4" />
+                            <span>Pricing</span>
+                        </Link>
+                        <button
+                            onClick={handleRunDemo}
+                            disabled={screen === "scanning" || !category}
+                            id="run-diagnosis-btn"
+                            className="btn-primary text-sm flex items-center gap-2 disabled:opacity-50"
+                        >
+                            <Zap className="w-4 h-4" />
+                            <span>{screen === "idle" ? "Run Demo Diagnosis" : "Run Again"}</span>
+                        </button>
+                    </div>
                 </div>
             </motion.header>
 
