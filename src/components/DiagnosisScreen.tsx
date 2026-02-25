@@ -1,0 +1,381 @@
+"use client";
+
+import { useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    FileUp,
+    Zap,
+    TrendingUp,
+    DollarSign,
+    Shield,
+    Activity,
+    Tag,
+    Sparkles,
+} from "lucide-react";
+import ScanningAnimation from "./ScanningAnimation";
+import AppealLetterPreview from "./AppealLetterPreview";
+import CategorySelector from "./CategorySelector";
+import GlassCard from "./GlassCard";
+import { analyzeByCategory } from "@/lib/services/analyze-bill";
+import { generateAppealByCategory, generateInstructionsByCategory } from "@/lib/services/appeal-router";
+import { calculateSmartFee } from "@/lib/services/fee-calc";
+import { DEMO_BILLS, CATEGORIES } from "@/lib/services/bill-categories";
+import type { BillCategory, UnifiedAnalysisResult } from "@/lib/services/bill-categories";
+
+type Screen = "idle" | "scanning" | "results";
+
+// ─── Scanning stage labels per category ──────────────────────
+const SCAN_LABELS: Record<BillCategory, string[]> = {
+    medical: [
+        "Parsing medical bill structure and extracting CPT codes...",
+        "AI vision model scanning for procedure codes and ICD-10...",
+        "Cross-referencing CMS Medicare Fee Schedule & regional data...",
+        "Flagging charges exceeding 130% of fair market value...",
+        "Drafting legal appeal letter with regulatory citations...",
+    ],
+    auto: [
+        "Parsing insurance renewal notice and coverage breakdown...",
+        "Extracting premium line items and deductible structure...",
+        "Cross-referencing NAIC state average rates & competitor data...",
+        "Flagging premium hikes exceeding 15% of state average...",
+        "Drafting re-evaluation request with rate comparison data...",
+    ],
+    rent: [
+        "Parsing lease statement and extracting line-item charges...",
+        "Identifying non-standard fees and surcharges...",
+        "Cross-referencing tenant rights law and fee caps by state...",
+        "Flagging hidden fees and illegal late charge patterns...",
+        "Drafting tenant rights dispute letter with legal citations...",
+    ],
+    utility: [
+        "Parsing utility statement and billing period history...",
+        "Detecting estimated vs. actual meter readings...",
+        "Checking for back-billing beyond 12-month regulatory limit...",
+        "Flagging over-estimated usage and rate discrepancies...",
+        "Drafting utility commission complaint with billing analysis...",
+    ],
+};
+
+export default function DiagnosisScreen() {
+    const [screen, setScreen] = useState<Screen>("idle");
+    const [category, setCategory] = useState<BillCategory | null>(null);
+    const [analysis, setAnalysis] = useState<UnifiedAnalysisResult | null>(null);
+    const [appealLetter, setAppealLetter] = useState("");
+    const [submissionInstructions, setSubmissionInstructions] = useState("");
+    const [isUnlocked, setIsUnlocked] = useState(false);
+    const [isUnlocking, setIsUnlocking] = useState(false);
+
+    const smartFee = analysis ? calculateSmartFee(analysis.potentialSavings) : null;
+    const activeMeta = CATEGORIES.find((c) => c.id === category);
+
+    // ─── Run Demo Analysis ──────────────────────────────────────
+    const handleRunDemo = useCallback(() => {
+        if (!category) return;
+        setScreen("scanning");
+        setAnalysis(null);
+        setAppealLetter("");
+        setIsUnlocked(false);
+
+        const billText = DEMO_BILLS[category];
+        const result = analyzeByCategory(billText, category);
+        setAnalysis(result);
+
+        const letter = generateAppealByCategory(category, result);
+        setAppealLetter(letter);
+
+        const instructions = generateInstructionsByCategory(
+            category,
+            result.providerName || "Provider"
+        );
+        setSubmissionInstructions(instructions);
+    }, [category]);
+
+    const handleScanComplete = useCallback(() => setScreen("results"), []);
+
+    // ─── Mock Unlock (swap for payment gateway) ─────────────────
+    const handleUnlock = useCallback(async () => {
+        setIsUnlocking(true);
+        await new Promise((r) => setTimeout(r, 1500));
+        setIsUnlocked(true);
+        setIsUnlocking(false);
+    }, []);
+
+    return (
+        <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto">
+            {/* ─── Header ──────────────────────────────────── */}
+            <motion.header
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-8"
+            >
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="flex items-center gap-3">
+                        <img src="/favicon.svg" alt="ClaimGuard" className="w-10 h-10 rounded-xl" />
+                        <div>
+                            <h1 className="text-2xl font-bold text-white tracking-tight">
+                                Claim<span className="text-emerald-400">Guard</span>
+                            </h1>
+                            <p className="text-xs text-gray-500 -mt-0.5">
+                                AI Bill Dispute Agent — Medical · Auto · Rent · Utility
+                            </p>
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={handleRunDemo}
+                        disabled={screen === "scanning" || !category}
+                        id="run-diagnosis-btn"
+                        className="btn-primary text-sm flex items-center gap-2 disabled:opacity-50"
+                    >
+                        <Zap className="w-4 h-4" />
+                        <span>{screen === "idle" ? "Run Demo Diagnosis" : "Run Again"}</span>
+                    </button>
+                </div>
+            </motion.header>
+
+            {/* ─── Category Selector ───────────────────────── */}
+            <motion.section
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="mb-8"
+            >
+                <div className="flex items-center gap-2 mb-4">
+                    <Tag className="w-4 h-4 text-emerald-500" />
+                    <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                        Select Bill Category
+                    </h2>
+                </div>
+                <CategorySelector
+                    selected={category}
+                    onSelect={(c) => {
+                        setCategory(c);
+                        if (screen === "results") {
+                            setScreen("idle");
+                            setAnalysis(null);
+                        }
+                    }}
+                    disabled={screen === "scanning"}
+                />
+            </motion.section>
+
+            {/* ─── Stats Row ───────────────────────────────── */}
+            <AnimatePresence>
+                {analysis && screen === "results" && smartFee && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+                    >
+                        {[
+                            {
+                                icon: <DollarSign className="w-4 h-4" />,
+                                label: "Total Billed",
+                                value: `$${analysis.totalBilled.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+                                color: "text-red-400",
+                            },
+                            {
+                                icon: <TrendingUp className="w-4 h-4" />,
+                                label: "Fair Market Price",
+                                value: `$${analysis.totalFairPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+                                color: "text-emerald-400",
+                            },
+                            {
+                                icon: <Activity className="w-4 h-4" />,
+                                label: "Potential Savings",
+                                value: `$${analysis.potentialSavings.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+                                color: "text-emerald-300",
+                                glow: true,
+                            },
+                            {
+                                icon: <Sparkles className="w-4 h-4" />,
+                                label: smartFee.feeLabel,
+                                value: `$${smartFee.fee.toFixed(2)}`,
+                                color: smartFee.feeType === "quick_win" ? "text-blue-400" : "text-amber-400",
+                                badge: smartFee.feeType === "quick_win" ? "QUICK WIN" : undefined,
+                            },
+                        ].map((stat, i) => (
+                            <motion.div
+                                key={stat.label}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 * i }}
+                            >
+                                <GlassCard delay={0.1 * i} className="text-center py-5">
+                                    <div className="flex items-center justify-center gap-1.5 mb-2">
+                                        <span className="text-emerald-500">{stat.icon}</span>
+                                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">
+                                            {stat.label}
+                                        </span>
+                                    </div>
+                                    <p className={`text-xl md:text-2xl font-bold ${stat.color} ${(stat as any).glow ? "text-glow" : ""}`}>
+                                        {stat.value}
+                                    </p>
+                                    {(stat as any).badge && (
+                                        <span className="inline-block mt-1.5 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-[9px] font-bold text-blue-400 tracking-wider">
+                                            {(stat as any).badge}
+                                        </span>
+                                    )}
+                                </GlassCard>
+                            </motion.div>
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* ─── Main Content ────────────────────────────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                {/* Left Column */}
+                <div>
+                    <AnimatePresence mode="wait">
+                        {screen === "idle" && (
+                            <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                                <GlassCard delay={0.2} hover={false} className="min-h-[400px] flex flex-col items-center justify-center">
+                                    <div className="text-center max-w-sm">
+                                        <div className="w-20 h-20 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-center mx-auto mb-5">
+                                            <FileUp className="w-9 h-9 text-emerald-500/50" />
+                                        </div>
+                                        <h3 className="text-lg font-semibold text-gray-300 mb-2">
+                                            {category ? `Ready to Analyze ${activeMeta?.label} Bill` : "Select a Category"}
+                                        </h3>
+                                        <p className="text-sm text-gray-500 leading-relaxed">
+                                            {category
+                                                ? `Click "Run Demo Diagnosis" to see the AI agent scan a sample ${activeMeta?.label?.toLowerCase()} bill and generate a dispute letter.`
+                                                : "Choose your bill type above to get started. Each category has specialized analysis logic."}
+                                        </p>
+                                        {activeMeta && (
+                                            <p className="text-xs text-gray-600 mt-3 italic">{activeMeta.scanDescription}</p>
+                                        )}
+                                    </div>
+                                </GlassCard>
+                            </motion.div>
+                        )}
+
+                        {screen === "scanning" && category && (
+                            <motion.div key="scanning" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                                <ScanningAnimation
+                                    isActive
+                                    onComplete={handleScanComplete}
+                                    stageDetails={SCAN_LABELS[category]}
+                                    categoryLabel={activeMeta?.label || "Bill"}
+                                />
+                            </motion.div>
+                        )}
+
+                        {screen === "results" && analysis && (
+                            <motion.div key="results" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                                <GlassCard delay={0.1} hover={false}>
+                                    <h2 className="text-sm font-bold text-gray-300 mb-1 uppercase tracking-wider flex items-center gap-2">
+                                        <Activity className="w-4 h-4 text-emerald-400" />
+                                        {analysis.disputeType} ({analysis.lineItems.length} issues)
+                                    </h2>
+                                    <p className="text-xs text-gray-500 mb-4">{analysis.analysisNotes}</p>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm">
+                                            <thead>
+                                                <tr className="border-b border-white/5">
+                                                    <th className="text-left py-3 px-2 text-gray-500 font-medium text-xs uppercase">Code</th>
+                                                    <th className="text-left py-3 px-2 text-gray-500 font-medium text-xs uppercase">Description</th>
+                                                    <th className="text-right py-3 px-2 text-gray-500 font-medium text-xs uppercase">Billed</th>
+                                                    <th className="text-right py-3 px-2 text-gray-500 font-medium text-xs uppercase">Fair</th>
+                                                    <th className="text-right py-3 px-2 text-gray-500 font-medium text-xs uppercase">Savings</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {analysis.lineItems.map((item, i) => (
+                                                    <motion.tr
+                                                        key={i}
+                                                        initial={{ opacity: 0, x: -10 }}
+                                                        animate={{ opacity: 1, x: 0 }}
+                                                        transition={{ delay: 0.05 * i }}
+                                                        className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors"
+                                                    >
+                                                        <td className="py-3 px-2 font-mono text-emerald-400 text-xs">{item.code}</td>
+                                                        <td className="py-3 px-2 text-gray-300 text-xs max-w-[200px] truncate">{item.description}</td>
+                                                        <td className="py-3 px-2 text-right text-red-400 font-medium text-xs">${item.billedAmount.toFixed(2)}</td>
+                                                        <td className="py-3 px-2 text-right text-emerald-400 font-medium text-xs">${item.fairPrice.toFixed(2)}</td>
+                                                        <td className="py-3 px-2 text-right text-emerald-300 font-semibold text-xs">${item.savings.toFixed(2)}</td>
+                                                    </motion.tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </GlassCard>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+
+                {/* Right Column: Appeal Letter Preview */}
+                <div>
+                    <AnimatePresence mode="wait">
+                        {screen === "idle" && (
+                            <motion.div key="idle-right" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                                <GlassCard delay={0.3} hover={false} className="min-h-[400px] flex flex-col items-center justify-center">
+                                    <div className="text-center">
+                                        <div className="w-20 h-20 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-center mx-auto mb-4">
+                                            <Shield className="w-9 h-9 text-emerald-500/30" />
+                                        </div>
+                                        <h3 className="text-lg font-semibold text-gray-300 mb-2">Dispute Letter Preview</h3>
+                                        <p className="text-sm text-gray-500 max-w-xs mx-auto">
+                                            Your AI-generated dispute letter will appear here after analysis.
+                                        </p>
+                                    </div>
+                                </GlassCard>
+                            </motion.div>
+                        )}
+
+                        {screen === "scanning" && (
+                            <motion.div key="scanning-right" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                                <GlassCard delay={0} hover={false} className="min-h-[400px] flex flex-col items-center justify-center">
+                                    <motion.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 2, repeat: Infinity }} className="text-center">
+                                        <Shield className="w-12 h-12 text-emerald-500/20 mx-auto mb-4" />
+                                        <p className="text-sm text-gray-600">Generating dispute letter...</p>
+                                    </motion.div>
+                                </GlassCard>
+                            </motion.div>
+                        )}
+
+                        {screen === "results" && analysis && smartFee && (
+                            <motion.div key="results-right" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                                <AppealLetterPreview
+                                    appealLetterMarkdown={appealLetter}
+                                    isUnlocked={isUnlocked}
+                                    potentialSavings={analysis.potentialSavings}
+                                    successFee={smartFee.fee}
+                                    providerName={analysis.providerName || "Provider"}
+                                    onUnlock={handleUnlock}
+                                    isUnlocking={isUnlocking}
+                                    feeLabel={smartFee.feeLabel}
+                                    feeType={smartFee.feeType}
+                                />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            </div>
+
+            {/* ─── Submission Instructions (after unlock) ─── */}
+            <AnimatePresence>
+                {isUnlocked && submissionInstructions && (
+                    <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="mb-8">
+                        <GlassCard delay={0} hover={false}>
+                            <h2 className="text-sm font-bold text-gray-300 mb-4 uppercase tracking-wider flex items-center gap-2">
+                                <FileUp className="w-4 h-4 text-emerald-400" />
+                                Submission Instructions
+                            </h2>
+                            <div className="text-sm leading-relaxed text-gray-400 whitespace-pre-wrap font-mono">{submissionInstructions}</div>
+                        </GlassCard>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* ─── Footer ──────────────────────────────────── */}
+            <motion.footer initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="mt-12 pb-8 text-center">
+                <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent mb-6" />
+                <p className="text-xs text-gray-600">ClaimGuard © {new Date().getFullYear()} — AI-Powered Bill Dispute Agent</p>
+                <p className="text-xs text-gray-700 mt-1">20% Success Fee or $10 Quick Win — Zero upfront cost.</p>
+            </motion.footer>
+        </div>
+    );
+}
