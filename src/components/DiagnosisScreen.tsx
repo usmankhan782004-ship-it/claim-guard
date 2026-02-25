@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     FileUp,
@@ -64,20 +64,21 @@ export default function DiagnosisScreen() {
     const [submissionInstructions, setSubmissionInstructions] = useState("");
     const [isUnlocked, setIsUnlocked] = useState(false);
     const [isUnlocking, setIsUnlocking] = useState(false);
+    const [billText, setBillText] = useState("");
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const smartFee = analysis ? calculateSmartFee(analysis.potentialSavings) : null;
     const activeMeta = CATEGORIES.find((c) => c.id === category);
 
-    // ─── Run Demo Analysis ──────────────────────────────────────
-    const handleRunDemo = useCallback(() => {
-        if (!category) return;
+    // ─── Run Analysis (Demo or Uploaded) ─────────────────────────
+    const runAnalysis = useCallback((text: string) => {
+        if (!category || !text.trim()) return;
         setScreen("scanning");
         setAnalysis(null);
         setAppealLetter("");
         setIsUnlocked(false);
 
-        const billText = DEMO_BILLS[category];
-        const result = analyzeByCategory(billText, category);
+        const result = analyzeByCategory(text, category);
         setAnalysis(result);
 
         const letter = generateAppealByCategory(category, result);
@@ -89,6 +90,39 @@ export default function DiagnosisScreen() {
         );
         setSubmissionInstructions(instructions);
     }, [category]);
+
+    const handleRunDemo = useCallback(() => {
+        if (!category) return;
+        const text = DEMO_BILLS[category];
+        setBillText(text);
+        runAnalysis(text);
+    }, [category, runAnalysis]);
+
+    // ─── File Upload Handler ─────────────────────────────────────
+    const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const content = event.target?.result as string;
+            if (content) {
+                setBillText(content);
+                if (category) runAnalysis(content);
+            }
+        };
+        reader.readAsText(file);
+
+        // Reset input so the same file can be re-selected
+        e.target.value = "";
+    }, [category, runAnalysis]);
+
+    // ─── Paste Text Handler ──────────────────────────────────────
+    const handlePasteAnalyze = useCallback(() => {
+        if (billText.trim() && category) {
+            runAnalysis(billText);
+        }
+    }, [billText, category, runAnalysis]);
 
     const handleScanComplete = useCallback(() => setScreen("results"), []);
 
@@ -232,17 +266,70 @@ export default function DiagnosisScreen() {
                             <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                                 <GlassCard delay={0.2} hover={false} className="min-h-[400px] flex flex-col items-center justify-center">
                                     <div className="text-center max-w-sm">
-                                        <div className="w-20 h-20 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-center mx-auto mb-5">
+                                        {/* Hidden file input */}
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept=".txt,.csv,.pdf,image/*"
+                                            onChange={handleFileUpload}
+                                            className="hidden"
+                                            id="bill-file-input"
+                                        />
+
+                                        <div
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="w-20 h-20 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-center mx-auto mb-5 cursor-pointer hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all duration-300"
+                                        >
                                             <FileUp className="w-9 h-9 text-emerald-500/50" />
                                         </div>
                                         <h3 className="text-lg font-semibold text-gray-300 mb-2">
-                                            {category ? `Ready to Analyze ${activeMeta?.label} Bill` : "Select a Category"}
+                                            {category ? `Upload Your ${activeMeta?.label} Bill` : "Select a Category"}
                                         </h3>
-                                        <p className="text-sm text-gray-500 leading-relaxed">
+                                        <p className="text-sm text-gray-500 leading-relaxed mb-4">
                                             {category
-                                                ? `Click "Run Demo Diagnosis" to see the AI agent scan a sample ${activeMeta?.label?.toLowerCase()} bill and generate a dispute letter.`
+                                                ? "Upload a bill file (.txt, .csv, image) or paste your bill text below."
                                                 : "Choose your bill type above to get started. Each category has specialized analysis logic."}
                                         </p>
+
+                                        {category && (
+                                            <>
+                                                <button
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                    className="btn-primary text-sm flex items-center gap-2 mx-auto mb-4"
+                                                    id="upload-bill-btn"
+                                                >
+                                                    <FileUp className="w-4 h-4" />
+                                                    <span>Upload Bill File</span>
+                                                </button>
+
+                                                <div className="relative my-4">
+                                                    <div className="absolute inset-0 flex items-center">
+                                                        <div className="w-full border-t border-white/10" />
+                                                    </div>
+                                                    <div className="relative flex justify-center text-xs">
+                                                        <span className="bg-[#0a0f1e] px-3 text-gray-600">or paste text</span>
+                                                    </div>
+                                                </div>
+
+                                                <textarea
+                                                    value={billText}
+                                                    onChange={(e) => setBillText(e.target.value)}
+                                                    placeholder="Paste your bill text here..."
+                                                    className="w-full h-28 bg-white/[0.03] border border-white/10 rounded-xl p-3 text-xs text-gray-300 font-mono resize-none placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/30 transition-colors"
+                                                    id="bill-text-input"
+                                                />
+                                                <button
+                                                    onClick={handlePasteAnalyze}
+                                                    disabled={!billText.trim()}
+                                                    className="btn-primary text-xs flex items-center gap-1.5 mx-auto mt-3 disabled:opacity-30"
+                                                    id="analyze-pasted-btn"
+                                                >
+                                                    <Zap className="w-3.5 h-3.5" />
+                                                    <span>Analyze Pasted Bill</span>
+                                                </button>
+                                            </>
+                                        )}
+
                                         {activeMeta && (
                                             <p className="text-xs text-gray-600 mt-3 italic">{activeMeta.scanDescription}</p>
                                         )}
