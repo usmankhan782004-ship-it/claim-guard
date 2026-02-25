@@ -17,6 +17,8 @@ import ScanningAnimation from "./ScanningAnimation";
 import AppealLetterPreview from "./AppealLetterPreview";
 import CategorySelector from "./CategorySelector";
 import GlassCard from "./GlassCard";
+import WealthTicker from "./WealthTicker";
+import LiveAgentFeed from "./LiveAgentFeed";
 import { analyzeByCategory } from "@/lib/services/analyze-bill";
 import { generateAppealByCategory, generateInstructionsByCategory } from "@/lib/services/appeal-router";
 import { calculateSmartFee } from "@/lib/services/fee-calc";
@@ -425,12 +427,7 @@ export default function DiagnosisScreen() {
 
                         {screen === "scanning" && (
                             <motion.div key="scanning-right" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                                <GlassCard delay={0} hover={false} className="min-h-[400px] flex flex-col items-center justify-center">
-                                    <motion.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 2, repeat: Infinity }} className="text-center">
-                                        <Shield className="w-12 h-12 text-emerald-500/20 mx-auto mb-4" />
-                                        <p className="text-sm text-gray-600">Generating dispute letter...</p>
-                                    </motion.div>
-                                </GlassCard>
+                                <LiveAgentFeed isActive={screen === "scanning"} />
                             </motion.div>
                         )}
 
@@ -452,6 +449,21 @@ export default function DiagnosisScreen() {
                     </AnimatePresence>
                 </div>
             </div>
+
+            {/* ─── Wealth Ticker + Agent Feed (below main grid) ─── */}
+            <AnimatePresence>
+                {screen === "results" && analysis && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8"
+                    >
+                        <WealthTicker savedAmount={analysis.potentialSavings} />
+                        <LiveAgentFeed isActive={false} />
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* ─── Submission Instructions (after unlock) ─── */}
             <AnimatePresence>
