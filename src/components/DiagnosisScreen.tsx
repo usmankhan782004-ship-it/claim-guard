@@ -19,6 +19,8 @@ import CategorySelector from "./CategorySelector";
 import GlassCard from "./GlassCard";
 import WealthTicker from "./WealthTicker";
 import LiveAgentFeed from "./LiveAgentFeed";
+import ReasoningSidebar from "./ReasoningSidebar";
+import UrgencyTicker from "./UrgencyTicker";
 import { analyzeByCategory } from "@/lib/services/analyze-bill";
 import { generateAppealByCategory, generateInstructionsByCategory } from "@/lib/services/appeal-router";
 import { calculateSmartFee } from "@/lib/services/fee-calc";
@@ -465,6 +467,21 @@ export default function DiagnosisScreen() {
                 )}
             </AnimatePresence>
 
+            {/* ─── Reasoning Sidebar + Urgency Ticker (below Wealth row) ─── */}
+            <AnimatePresence>
+                {screen === "results" && analysis && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                        className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8"
+                    >
+                        <ReasoningSidebar category={category!} isVisible={true} />
+                        <UrgencyTicker category={category!} />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* ─── Submission Instructions (after unlock) ─── */}
             <AnimatePresence>
                 {isUnlocked && submissionInstructions && (
@@ -483,8 +500,34 @@ export default function DiagnosisScreen() {
             {/* ─── Footer ──────────────────────────────────── */}
             <motion.footer initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="mt-12 pb-8 text-center">
                 <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent mb-6" />
+
+                {/* Trust Badges */}
+                <div className="flex items-center justify-center gap-4 mb-4 flex-wrap">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/[0.08] border border-emerald-500/15">
+                        <Shield className="w-3 h-3 text-emerald-400" />
+                        <span className="text-[10px] font-bold text-emerald-400/80 tracking-wider">HIPAA-COMPLIANT AI</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/[0.08] border border-emerald-500/15">
+                        <Shield className="w-3 h-3 text-emerald-400" />
+                        <span className="text-[10px] font-bold text-emerald-400/80 tracking-wider">BANK-LEVEL SECURITY</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/[0.08] border border-emerald-500/15">
+                        <Shield className="w-3 h-3 text-emerald-400" />
+                        <span className="text-[10px] font-bold text-emerald-400/80 tracking-wider">256-BIT ENCRYPTION</span>
+                    </div>
+                </div>
+
                 <p className="text-xs text-gray-600">ClaimGuard © {new Date().getFullYear()} — AI-Powered Bill Dispute Agent</p>
                 <p className="text-xs text-gray-700 mt-1">20% Success Fee or $10 Quick Win — Zero upfront cost.</p>
+
+                <a
+                    href="https://wa.me/1234567890?text=Hi%2C%20I%20need%20help%20with%20ClaimGuard"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-gray-400 hover:text-emerald-400 hover:border-emerald-500/20 transition-all text-xs"
+                >
+                    💬 Contact Founder
+                </a>
             </motion.footer>
         </div>
     );

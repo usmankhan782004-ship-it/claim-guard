@@ -15,6 +15,8 @@ const QUESTIONABLE_FEES: Record<string, { maxReasonable: number; legalNote: stri
     parking_fee: { maxReasonable: 100, legalNote: "Parking above $100/mo should be market-comparable; mandatory parking fees may violate tenant rights" },
     cam_fee: { maxReasonable: 150, legalNote: "Common Area Maintenance (CAM) charges exceeding $150/mo require itemized documentation. Residential tenants may dispute non-itemized or inflated CAM fees under URLTA" },
     cam_reconciliation: { maxReasonable: 0, legalNote: "CAM reconciliation adjustments without supporting documentation from the landlord are disputable. Tenants have the right to audit CAM expenses" },
+    convenience_fee: { maxReasonable: 0, legalNote: "Convenience fees for paying rent online/by card are illegal in many jurisdictions (CA AB 2219, NY RPL §235-e). Landlords cannot charge tenants extra for using a particular payment method" },
+    security_deposit_overcharge: { maxReasonable: 0, legalNote: "Security deposit overcharges violate state deposit cap laws (e.g., CA: 2x rent unfurnished, NY: 1 month max per HSTPA 2019, IL: varies by municipality). Excess must be refunded with interest" },
 };
 
 const FEE_PATTERNS: { pattern: RegExp; key: string }[] = [
@@ -26,6 +28,8 @@ const FEE_PATTERNS: { pattern: RegExp; key: string }[] = [
     { pattern: /parking/i, key: "parking_fee" },
     { pattern: /common\s+area|cam\b|maintenance\s+(charge|fee)/i, key: "cam_fee" },
     { pattern: /cam\s+reconcil|cam\s+adjust|cam\s+true.?up/i, key: "cam_reconciliation" },
+    { pattern: /convenience|online\s+pay|card\s+fee|payment\s+processing|portal\s+fee/i, key: "convenience_fee" },
+    { pattern: /security\s+deposit|deposit\s+charge|move.?in\s+deposit/i, key: "security_deposit_overcharge" },
 ];
 
 // Notice period requirements (most states require 30-60 days for rent increases)
