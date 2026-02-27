@@ -521,7 +521,7 @@ export default function DiagnosisScreen() {
                 <p className="text-xs text-gray-700 mt-1">20% Success Fee or $10 Quick Win — Zero upfront cost.</p>
 
                 <a
-                    href="https://wa.me/1234567890?text=Hi%2C%20I%20need%20help%20with%20ClaimGuard"
+                    href="mailto:usmankhan7.8.2004@gmail.com?subject=ClaimGuard%20Support%20Request&body=Hi%20Usman,%20I%20need%20help%20with..."
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-gray-400 hover:text-emerald-400 hover:border-emerald-500/20 transition-all text-xs"

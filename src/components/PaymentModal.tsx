@@ -205,8 +205,8 @@ export default function PaymentModal({
                                                 key={m.id}
                                                 onClick={() => setPayMethod(m.id)}
                                                 className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all text-xs font-medium ${payMethod === m.id
-                                                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                                                        : "bg-white/[0.02] border-white/[0.06] text-gray-500 hover:border-white/10"
+                                                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                                                    : "bg-white/[0.02] border-white/[0.06] text-gray-500 hover:border-white/10"
                                                     }`}
                                             >
                                                 <m.icon className="w-4 h-4" />
@@ -277,6 +277,16 @@ export default function PaymentModal({
                                     )}
 
                                     <p className="text-center text-xs text-gray-600 mt-4">🔒 Secured by ClaimGuard • 256-bit encryption</p>
+                                    <p className="text-center mt-3">
+                                        <a
+                                            href="mailto:usmankhan7.8.2004@gmail.com?subject=ClaimGuard%20Support%20Request&body=Hi%20Usman,%20I%20need%20help%20with..."
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-xs text-gray-500 hover:text-emerald-400 transition-colors underline underline-offset-2"
+                                        >
+                                            Need help? Contact Founder
+                                        </a>
+                                    </p>
                                 </motion.div>
                             )}
 
