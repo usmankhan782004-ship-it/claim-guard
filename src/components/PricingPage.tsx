@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Shield,
@@ -12,9 +12,12 @@ import {
     Sparkles,
     DollarSign,
     ChevronRight,
+    Lock,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import MemberInviteModal from "./MemberInviteModal";
+import PaymentModal from "./PaymentModal";
 
 // ─── Tier Data ──────────────────────────────────────────────
 interface PricingTier {
@@ -117,9 +120,34 @@ function formatCurrency(n: number): string {
 
 // ─── Component ──────────────────────────────────────────────
 export default function PricingPage() {
+    const router = useRouter();
     const [monthlyBills, setMonthlyBills] = useState(500);
     const [hoveredTier, setHoveredTier] = useState<string | null>(null);
     const [inviteOpen, setInviteOpen] = useState(false);
+    const [isSecuring, setIsSecuring] = useState(false);
+    const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+    const [selectedTier, setSelectedTier] = useState<PricingTier | null>(null);
+    const [billId] = useState(() => crypto.randomUUID());
+
+    const handlePlanSelect = useCallback((tier: PricingTier) => {
+        if (tier.id === "free") {
+            router.push("/app");
+            return;
+        }
+        // Paid plan → show loading state then open modal
+        setSelectedTier(tier);
+        setIsSecuring(true);
+        setTimeout(() => {
+            setIsSecuring(false);
+            setIsPaymentOpen(true);
+        }, 1000);
+    }, [router]);
+
+    const handlePaymentSuccess = useCallback(() => {
+        setIsPaymentOpen(false);
+        setSelectedTier(null);
+        router.push("/app?plan=" + (selectedTier?.id || "defender"));
+    }, [router, selectedTier]);
 
     const savings = useMemo(() => {
         const grossSavings = monthlyBills * SAVINGS_RATE;
@@ -270,6 +298,7 @@ export default function PricingPage() {
 
                                     {/* CTA Button */}
                                     <button
+                                        onClick={() => handlePlanSelect(tier)}
                                         className={`
                                         w-full py-3.5 rounded-xl font-semibold text-sm
                                         flex items-center justify-center gap-2
@@ -467,6 +496,49 @@ export default function PricingPage() {
 
             {/* ─── Member Invite Modal ────────────────────── */}
             <MemberInviteModal isOpen={inviteOpen} onClose={() => setInviteOpen(false)} />
+
+            {/* ─── "Securing Connection" Loading Overlay ──── */}
+            <AnimatePresence>
+                {isSecuring && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="text-center"
+                        >
+                            <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                                className="w-16 h-16 border-2 border-emerald-500/30 border-t-emerald-400 rounded-full mx-auto mb-6"
+                            />
+                            <div className="flex items-center justify-center gap-2 mb-2">
+                                <Lock className="w-4 h-4 text-emerald-400" />
+                                <h3 className="text-lg font-semibold text-white">Securing your connection…</h3>
+                            </div>
+                            <p className="text-sm text-gray-400">
+                                Preparing {selectedTier?.name} payment details
+                            </p>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* ─── Payment Modal ──────────────────────────── */}
+            {selectedTier && (
+                <PaymentModal
+                    isOpen={isPaymentOpen}
+                    onClose={() => { setIsPaymentOpen(false); setSelectedTier(null); }}
+                    amount={selectedTier.price}
+                    billId={billId}
+                    onSuccess={handlePaymentSuccess}
+                />
+            )}
         </>
     );
 }
