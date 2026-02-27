@@ -20,7 +20,7 @@ function generateSafeLink(): string {
     const segments = [8, 4, 4].map((len) =>
         Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join("")
     );
-    return `https://app.claimguard.com/join/${segments.join("-")}`;
+    return `https://claim-guard-six.vercel.app/invite/${segments.join("-")}`;
 }
 
 // ─── Component ──────────────────────────────────────────────
@@ -132,8 +132,8 @@ export default function MemberInviteModal({ isOpen, onClose }: MemberInviteModal
                                         animate={{ scale: 1 }}
                                         transition={{ delay: 0.1 * i }}
                                         className={`w-8 h-8 rounded-lg border flex items-center justify-center ${i < members.length
-                                                ? "bg-emerald-500/15 border-emerald-500/30"
-                                                : "bg-white/[0.02] border-white/[0.06] border-dashed"
+                                            ? "bg-emerald-500/15 border-emerald-500/30"
+                                            : "bg-white/[0.02] border-white/[0.06] border-dashed"
                                             }`}
                                     >
                                         {i < members.length ? (
@@ -165,8 +165,8 @@ export default function MemberInviteModal({ isOpen, onClose }: MemberInviteModal
                                                 </div>
                                             </div>
                                             <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${m.status === "active"
-                                                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                                                    : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                                : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                                                 }`}>
                                                 {m.joinedAt || m.status}
                                             </span>
@@ -217,8 +217,8 @@ export default function MemberInviteModal({ isOpen, onClose }: MemberInviteModal
                                         <button
                                             onClick={handleCopyLink}
                                             className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${copied
-                                                    ? "bg-emerald-500/20 border border-emerald-500/30 text-emerald-400"
-                                                    : "bg-white/[0.04] border border-white/[0.08] text-gray-400 hover:text-white hover:bg-white/[0.08]"
+                                                ? "bg-emerald-500/20 border border-emerald-500/30 text-emerald-400"
+                                                : "bg-white/[0.04] border border-white/[0.08] text-gray-400 hover:text-white hover:bg-white/[0.08]"
                                                 }`}
                                         >
                                             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
@@ -243,6 +243,11 @@ export default function MemberInviteModal({ isOpen, onClose }: MemberInviteModal
                                     />
                                     <button
                                         disabled={!inviteEmail.includes("@")}
+                                        onClick={() => {
+                                            const subject = encodeURIComponent("You're invited to ClaimGuard Family Vault!");
+                                            const body = encodeURIComponent(`Hi!\n\nI'm inviting you to join my ClaimGuard Family Vault. Use this link to join:\n\n${safeLink || "(generate a link first)"}\n\nClaimGuard helps you fight unfair bills with AI. See you inside!`);
+                                            window.open(`mailto:${inviteEmail}?subject=${subject}&body=${body}`, "_blank");
+                                        }}
                                         className="px-5 py-2.5 rounded-xl bg-emerald-500 text-black font-semibold text-sm hover:bg-emerald-400 transition-colors disabled:opacity-30 disabled:hover:bg-emerald-500"
                                     >
                                         Invite

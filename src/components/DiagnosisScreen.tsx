@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import ScanningAnimation from "./ScanningAnimation";
 import AppealLetterPreview from "./AppealLetterPreview";
+import PaymentModal from "./PaymentModal";
 import CategorySelector from "./CategorySelector";
 import GlassCard from "./GlassCard";
 import WealthTicker from "./WealthTicker";
@@ -69,6 +70,8 @@ export default function DiagnosisScreen() {
     const [submissionInstructions, setSubmissionInstructions] = useState("");
     const [isUnlocked, setIsUnlocked] = useState(false);
     const [isUnlocking, setIsUnlocking] = useState(false);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [billId] = useState(() => crypto.randomUUID());
     const [billText, setBillText] = useState("");
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -131,12 +134,15 @@ export default function DiagnosisScreen() {
 
     const handleScanComplete = useCallback(() => setScreen("results"), []);
 
-    // ─── Mock Unlock (swap for payment gateway) ─────────────────
-    const handleUnlock = useCallback(async () => {
-        setIsUnlocking(true);
-        await new Promise((r) => setTimeout(r, 1500));
+    // ─── Open Payment Modal ─────────────────────────────────────
+    const handleUnlock = useCallback(() => {
+        setIsPaymentModalOpen(true);
+    }, []);
+
+    const handlePaymentSuccess = useCallback(() => {
         setIsUnlocked(true);
         setIsUnlocking(false);
+        setIsPaymentModalOpen(false);
     }, []);
 
     return (
@@ -529,6 +535,17 @@ export default function DiagnosisScreen() {
                     💬 Contact Founder
                 </a>
             </motion.footer>
+
+            {/* ─── Payment Modal ──────────────────────────── */}
+            {smartFee && (
+                <PaymentModal
+                    isOpen={isPaymentModalOpen}
+                    onClose={() => setIsPaymentModalOpen(false)}
+                    amount={smartFee.fee}
+                    billId={billId}
+                    onSuccess={handlePaymentSuccess}
+                />
+            )}
         </div>
     );
 }
