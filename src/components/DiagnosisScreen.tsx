@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     FileUp,
@@ -72,12 +72,33 @@ export default function DiagnosisScreen() {
     const [isUnlocked, setIsUnlocked] = useState(false);
     const [isUnlocking, setIsUnlocking] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [selectedPlanAmount, setSelectedPlanAmount] = useState<number | null>(null);
     const [billId] = useState(() => crypto.randomUUID());
     const [billText, setBillText] = useState("");
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const smartFee = analysis ? calculateSmartFee(analysis.potentialSavings) : null;
     const activeMeta = CATEGORIES.find((c) => c.id === category);
+
+    // ─── Handle URL Query Params (Pricing Page Redirects) ──────────
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get("openPayment") === "true") {
+                const plan = urlParams.get("plan");
+                if (plan === "family_vault") setSelectedPlanAmount(49);
+                else if (plan === "defender") setSelectedPlanAmount(29);
+
+                setIsPaymentModalOpen(true);
+
+                // Clean up URL
+                const url = new URL(window.location.href);
+                url.searchParams.delete("openPayment");
+                url.searchParams.delete("plan");
+                window.history.replaceState({}, document.title, url.toString());
+            }
+        }
+    }, []);
 
     // ─── Run Analysis (Demo or Uploaded) ─────────────────────────
     const runAnalysis = useCallback((text: string) => {
@@ -547,15 +568,16 @@ export default function DiagnosisScreen() {
             </motion.footer>
 
             {/* ─── Payment Modal ──────────────────────────── */}
-            {smartFee && (
-                <PaymentModal
-                    isOpen={isPaymentModalOpen}
-                    onClose={() => setIsPaymentModalOpen(false)}
-                    amount={smartFee.fee}
-                    billId={billId}
-                    onSuccess={handlePaymentSuccess}
-                />
-            )}
+            <PaymentModal
+                isOpen={isPaymentModalOpen}
+                onClose={() => {
+                    setIsPaymentModalOpen(false);
+                    setSelectedPlanAmount(null);
+                }}
+                amount={selectedPlanAmount ?? (smartFee?.fee || 0)}
+                billId={billId}
+                onSuccess={handlePaymentSuccess}
+            />
         </div>
     );
 }

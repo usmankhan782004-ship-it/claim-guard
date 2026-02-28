@@ -141,17 +141,12 @@ export default function PricingPage() {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
-            window.location.href = `/login?redirect=${encodeURIComponent('/pricing')}`;
+            window.location.href = `/login?redirect=${encodeURIComponent(`/app?openPayment=true&plan=${tier.id}`)}`;
             return;
         }
 
-        // Show loading state then open modal
-        setSelectedTier(tier);
-        setIsSecuring(true);
-        setTimeout(() => {
-            setIsSecuring(false);
-            setIsPaymentOpen(true);
-        }, 1000);
+        // Redirect to /app with query params to unified payment trigger
+        router.push(`/app?openPayment=true&plan=${tier.id}`);
     }, [router]);
 
     const handlePaymentSuccess = useCallback(() => {
