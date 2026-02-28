@@ -5,7 +5,7 @@
 // ──────────────────────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase";
+import { createServerClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
     try {
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
         // Parse multipart form data
         const formData = await request.formData();
-        const file = formData.get("file") as File | null;
+        const file = formData.get("receipt") as File | null;
 
         if (!file) {
             return NextResponse.json(
@@ -85,10 +85,16 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Get public URL for the uploaded file
-        const {
-            data: { publicUrl },
-        } = supabase.storage.from("bills").getPublicUrl(filePath);
+        // Get signed URL for the uploaded file (7 days expiry)
+        const { data: signedData, error: signedUrlError } = await supabase.storage
+            .from("bills")
+            .createSignedUrl(filePath, 604800);
+
+        if (signedUrlError) {
+            console.error("Failed to generate signed URL:", signedUrlError);
+        }
+
+        const fileUrl = signedData?.signedUrl || "";
 
         // Create bill record in database
         const { data: bill, error: insertError } = await supabase
@@ -97,7 +103,7 @@ export async function POST(request: NextRequest) {
                 user_id: user.id,
                 file_name: file.name,
                 file_path: filePath,
-                file_url: publicUrl,
+                file_url: fileUrl,
                 file_type: file.type,
                 status: "uploaded",
             })

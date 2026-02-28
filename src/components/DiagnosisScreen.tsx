@@ -25,6 +25,7 @@ import UrgencyTicker from "./UrgencyTicker";
 import { analyzeByCategory } from "@/lib/services/analyze-bill";
 import { generateAppealByCategory, generateInstructionsByCategory } from "@/lib/services/appeal-router";
 import { calculateSmartFee } from "@/lib/services/fee-calc";
+import { createClient } from "@/lib/supabase/client";
 import { DEMO_BILLS, CATEGORIES } from "@/lib/services/bill-categories";
 import type { BillCategory, UnifiedAnalysisResult } from "@/lib/services/bill-categories";
 
@@ -135,7 +136,16 @@ export default function DiagnosisScreen() {
     const handleScanComplete = useCallback(() => setScreen("results"), []);
 
     // ─── Open Payment Modal ─────────────────────────────────────
-    const handleUnlock = useCallback(() => {
+    const handleUnlock = useCallback(async () => {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            // Redirect to a unified login page, passing redirect context
+            window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+            return;
+        }
+
         setIsPaymentModalOpen(true);
     }, []);
 
@@ -482,7 +492,7 @@ export default function DiagnosisScreen() {
                         transition={{ delay: 0.5 }}
                         className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8"
                     >
-                        <ReasoningSidebar category={category!} isVisible={true} />
+                        <ReasoningSidebar category={category!} isVisible={true} lineItems={analysis.lineItems} />
                         <UrgencyTicker category={category!} />
                     </motion.div>
                 )}

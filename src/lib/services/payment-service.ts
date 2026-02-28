@@ -4,7 +4,8 @@
 // Any test card number will succeed in simulated mode.
 // ──────────────────────────────────────────────────────────────
 
-import { createServerClient, type PaymentStatus } from "@/lib/supabase";
+import { createServerClient } from "@/lib/supabase/server";
+import { type PaymentStatus } from "@/lib/supabase";
 import { markFeePaid } from "./fee-calculator";
 
 // ─── Types ───────────────────────────────────────────────────
@@ -62,6 +63,19 @@ export class PaymentService {
     ): Promise<{ session: CheckoutSession | null; error?: string }> {
         try {
             const supabase = await createServerClient();
+
+            // Enforce bill ownership
+            const { data: bill, error: billError } = await supabase
+                .from("bills")
+                .select("id")
+                .eq("id", billId)
+                .eq("user_id", userId)
+                .single();
+
+            if (billError || !bill) {
+                return { session: null, error: "403 Forbidden: You do not have permission to checkout for this bill." };
+            }
+
             const sessionId = generateSessionId();
 
             const { error: insertError } = await supabase.from("payments").insert({
@@ -109,12 +123,23 @@ export class PaymentService {
     ): Promise<PaymentResult> {
         try {
             const supabase = await createServerClient();
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-            // Verify session exists and is pending
+            if (authError || !user) {
+                return {
+                    success: false,
+                    sessionId,
+                    status: "failed",
+                    error: "Unauthorized payment processing",
+                };
+            }
+
+            // Verify session exists, is pending, AND belongs to the user
             const { data: payment, error: fetchError } = await supabase
                 .from("payments")
                 .select("*")
                 .eq("session_id", sessionId)
+                .eq("user_id", user.id)
                 .single();
 
             if (fetchError || !payment) {
@@ -122,7 +147,7 @@ export class PaymentService {
                     success: false,
                     sessionId,
                     status: "failed",
-                    error: "Payment session not found",
+                    error: "Payment session not found or access denied",
                 };
             }
 
@@ -139,7 +164,8 @@ export class PaymentService {
             await supabase
                 .from("payments")
                 .update({ status: "processing" as PaymentStatus })
-                .eq("session_id", sessionId);
+                .eq("session_id", sessionId)
+                .eq("user_id", user.id);
 
             // ─── Simulated Processing Logic ────────────────────
             const cleaned = cardNumber.replace(/\s|-/g, "");
@@ -176,7 +202,8 @@ export class PaymentService {
             await supabase
                 .from("payments")
                 .update(updateData)
-                .eq("session_id", sessionId);
+                .eq("session_id", sessionId)
+                .eq("user_id", user.id);
 
             // If payment succeeded, update the user's ledger
             if (finalStatus === "completed") {
@@ -207,15 +234,21 @@ export class PaymentService {
     ): Promise<{ status: PaymentStatus; payment: Record<string, unknown> | null; error?: string }> {
         try {
             const supabase = await createServerClient();
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+            if (authError || !user) {
+                return { status: "failed", payment: null, error: "Unauthorized access" };
+            }
 
             const { data: payment, error } = await supabase
                 .from("payments")
                 .select("*")
                 .eq("session_id", sessionId)
+                .eq("user_id", user.id)
                 .single();
 
             if (error || !payment) {
-                return { status: "failed", payment: null, error: "Payment not found" };
+                return { status: "failed", payment: null, error: "Payment not found or access denied" };
             }
 
             return { status: payment.status, payment };

@@ -26,6 +26,7 @@ function generateAutoAppeal(data: UnifiedAnalysisResult): string {
 
 My premium has increased by more than **15%** on **${hikeItems.length} coverage line(s)** without corresponding claims activity. This may violate:
 
+- **NY ISC § 2335** — Accident Surcharge Limit: limits how much an insurer can surcharge for a single accident.
 - **CA Insurance Code §1861.02(b)** — "Good Driver" discount mandate: drivers with clean records for 3+ years are entitled to a minimum 20% discount on liability premiums.
 - **NAIC Model Act §4(7)** — Prohibits "unfairly discriminatory" rates for policyholders with equivalent risk profiles and loss histories.
 - **State Anti-Rate-Gouging Provisions** — Many states (TX Ins. Code §2251, FL §627.062) require actuarial justification for premium increases exceeding 15%.
@@ -75,13 +76,15 @@ This analysis is based on the following publicly available data:
 
 ## Justification for Re-evaluation
 
+Pursuant to state rate regulations, these premiums require scrutiny. 
+
 1. **Clean Driving Record** — Zero claims filed in 24+ months, no at-fault accidents, no moving violations.
 2. **Low Risk Profile** — Annual mileage below state average, vehicle equipped with anti-theft and safety features.
-3. **Rating Factor Review** — My premiums exceed published state averages by an average of **+${avgExcess}%**, which may indicate outdated or incorrect rating factors in my file.
-4. **Market Competition** — Equivalent coverage is available from competitors at rates within 5% of the state average.
+3. **Rating Factor Review** — My premiums exceed published state averages by an average of **+${avgExcess}%**, which may indicate outdated or incorrect rating factors in my file. This charge appears to be in violation of fair rating practices under NAIC frameworks.
 
 ## Requested Action
 
+I request a formal review of this premium calculation. Specifically:
 1. **Conduct a full rate review** — Re-evaluate my risk classification using current driving record, credit data, and vehicle information.
 2. **Provide a written rate justification** — For each coverage line that remains above the state average, provide the specific actuarial factors used.
 3. **Apply all eligible discounts** — Including loyalty, safe driver, low mileage, multi-policy, and equipment discounts.
@@ -173,15 +176,17 @@ ${allRows}
 ${camSection}${noticeSection}
 ## General Legal Basis
 
-1. **Tenant Rights Act** — Most states prohibit landlords from charging fees not explicitly agreed upon in the lease, including administrative fees, digital access fees, and insurance surcharges.
+This dispute is filed pursuant to explicit tenant protection statutes, including:
 
-2. **Late Fee Limitations** — State law typically caps late fees at **4-5% of monthly rent** and requires a **3-5 day grace period** before late fees can be assessed.
-
+1. **California AB 2943 (Junk Fee Ban)** — Prohibits landlords and businesses from charging hidden "junk fees" not clearly disclosed at the time of lease signing.
+2. **Florida SB 1592 (End Junk Fees for Renters Act)** — Limits the ability of property management to levy arbitrary administrative or processing charges.
 3. **Uniform Residential Landlord and Tenant Act (URLTA)** — Prohibits unconscionable rental terms, including hidden fees, unjustified CAM charges, and rent increases without proper notice.
 
-4. **Consumer Protection Laws** — Deceptive fee practices may constitute unfair business practices under state consumer protection statutes.
+These charges appear to be in violation of transparent leasing laws and explicit state fee caps. 
 
 ## Requested Resolution
+
+I request a formal review of these ledger items. Please immediately:
 
 1. **Remove all disputed fees** that are not explicitly authorized in the lease agreement.
 2. **Provide itemized CAM documentation** with receipts for any CAM charges you believe are valid.
@@ -283,19 +288,17 @@ ${rows}
 ${estVsActualSection}${junkFeeSection}
 ## Legal Basis
 
+This dispute is filed pursuant to public utility commission laws:
+
 1. **Back-Billing Regulations** — Most state utility commissions prohibit back-billing customers for more than **12 months** of estimated usage. Any charges beyond this period are the utility's responsibility.
-
 2. **Estimated vs. Actual Meter Standards** — When estimated readings significantly exceed actual usage (as revealed by meter replacement or actual reading), customers are entitled to a **full refund** of the overcharge. The burden of proof lies with the utility to demonstrate estimated readings were reasonable.
+3. **Service Connection Fee Caps** — Connection, disconnection, and reactivation fees are regulated by PUC tariffs and cannot exceed approved maximums.
 
-3. **PUC Meter Reading Requirements** — Utilities are required to obtain actual meter readings at regular intervals (typically every 1-3 months). Extended periods of estimation without actual verification constitute a **service standard violation** reportable to the PUC.
-
-4. **Rate Change Notification** — Any rate change must be accompanied by proper customer notification and regulatory approval. Undisclosed rate hikes are disputable.
-
-5. **Consumer Protection** — Retroactive billing adjustments without customer notification and consent may violate state consumer protection laws.
-
-6. **Service Connection Fee Caps** — Connection, disconnection, and reactivation fees are regulated by PUC tariffs and cannot exceed approved maximums.
+These practices appear to be in violation of standard Public Utility Commission administrative codes protecting against unverified back-billing and undisclosed surcharges.
 
 ## Requested Resolution
+
+I request a formal review of these statements. Specifically, I am asking to:
 
 1. **Remove all back-billing charges** exceeding the 12-month regulatory limit.
 2. **Refund the difference** between estimated and actual meter readings for all overcharged periods.

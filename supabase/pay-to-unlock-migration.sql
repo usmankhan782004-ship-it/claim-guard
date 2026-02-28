@@ -31,8 +31,8 @@ create table if not exists public.negotiations_v2 (
   updated_at        timestamptz not null default now()
 );
 
-create index idx_negotiations_v2_user on public.negotiations_v2(user_id);
-create index idx_negotiations_v2_unlocked on public.negotiations_v2(is_unlocked);
+create index if not exists idx_negotiations_v2_user on public.negotiations_v2(user_id);
+create index if not exists idx_negotiations_v2_unlocked on public.negotiations_v2(is_unlocked);
 
 comment on table public.negotiations_v2 is
   'Bill-level analysis records with pay-to-unlock gate for premium content.';
@@ -79,8 +79,8 @@ create table if not exists public.premium_content (
   updated_at        timestamptz not null default now()
 );
 
-create index idx_premium_content_negotiation on public.premium_content(negotiation_id);
-create index idx_premium_content_user on public.premium_content(user_id);
+create index if not exists idx_premium_content_negotiation on public.premium_content(negotiation_id);
+create index if not exists idx_premium_content_user on public.premium_content(user_id);
 
 comment on table public.premium_content is
   'Premium content (appeal letters) gated by is_unlocked on negotiations_v2.';

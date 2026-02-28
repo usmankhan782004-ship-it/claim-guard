@@ -4,7 +4,7 @@
 // Works in both Supabase-connected and demo (local) modes.
 // ──────────────────────────────────────────────────────────────
 
-import { createServerClient } from "@/lib/supabase";
+import { createServerClient } from "@/lib/supabase/server";
 import type { AnalysisResult } from "./analysis-engine";
 import { generateAppealLetter, generateSubmissionInstructions } from "./appeal-generator";
 

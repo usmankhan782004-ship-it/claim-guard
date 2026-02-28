@@ -83,7 +83,6 @@ export function analyzeUtilityBill(billText: string): UnifiedAnalysisResult {
 
     const flaggedItems: FlaggedItem[] = [];
     const estimatedPeriods = periods.filter((p) => p.isEstimated);
-    const totalMonthsBilled = periods.length;
 
     let totalBilled = periods.reduce((sum, p) => sum + p.amount, 0) + backBillAmount + serviceFee;
     let totalFair = 0;

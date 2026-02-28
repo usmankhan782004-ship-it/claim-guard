@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import MemberInviteModal from "./MemberInviteModal";
 import PaymentModal from "./PaymentModal";
 
@@ -129,12 +130,22 @@ export default function PricingPage() {
     const [selectedTier, setSelectedTier] = useState<PricingTier | null>(null);
     const [billId] = useState(() => crypto.randomUUID());
 
-    const handlePlanSelect = useCallback((tier: PricingTier) => {
+    const handlePlanSelect = useCallback(async (tier: PricingTier) => {
         if (tier.id === "free") {
             router.push("/app");
             return;
         }
-        // Paid plan → show loading state then open modal
+
+        // Paid plan Auth-Gate
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            window.location.href = `/login?redirect=${encodeURIComponent('/pricing')}`;
+            return;
+        }
+
+        // Show loading state then open modal
         setSelectedTier(tier);
         setIsSecuring(true);
         setTimeout(() => {

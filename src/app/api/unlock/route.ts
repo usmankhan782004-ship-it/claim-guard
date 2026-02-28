@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase";
-import { unlockNegotiation, createNegotiation } from "@/lib/services/negotiation-service";
-import { analyzeBillText } from "@/lib/services/analysis-engine";
+import { createServerClient } from "@/lib/supabase/server";
+import { unlockNegotiation } from "@/lib/services/negotiation-service";
 
 // ─── POST /api/unlock — Flip is_unlocked and return premium content
 // In production, this would be called by a Lemon Squeezy webhook
@@ -48,6 +47,14 @@ export async function POST(req: NextRequest) {
             .select("*")
             .eq("negotiation_id", negotiationId)
             .single();
+
+        if (contentError && contentError.code !== "PGRST116") {
+            console.error("Failed to load premium content after unlock:", contentError);
+            return NextResponse.json(
+                { error: "Content unlocked, but failed to load the generated appeal letter." },
+                { status: 500 }
+            );
+        }
 
         return NextResponse.json({
             success: true,

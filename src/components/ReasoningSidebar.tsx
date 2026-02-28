@@ -1,8 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Scale, BookOpen, Shield, FileText, AlertTriangle } from "lucide-react";
-import type { BillCategory } from "@/lib/services/bill-categories";
+import { Scale, BookOpen, Shield, FileText, AlertTriangle, AlertCircle } from "lucide-react";
+import type { BillCategory, FlaggedItem } from "@/lib/services/bill-categories";
 
 // ─── Legal codes by category ─────────────────────────────────
 const LEGAL_CODES: Record<string, { code: string; name: string; icon: "scale" | "book" | "shield" | "file" | "alert" }[]> = {
@@ -11,10 +11,11 @@ const LEGAL_CODES: Record<string, { code: string; name: string; icon: "scale" | 
         { code: "FDCPA §808", name: "Fair Debt Collection — Prohibited Practices", icon: "scale" },
         { code: "42 USC §300gg-111", name: "Independent Dispute Resolution Process", icon: "file" },
         { code: "HIPAA §164.530", name: "Right to Accounting of Disclosures", icon: "book" },
-        { code: "ACA §1557", name: "Non-Discrimination in Health Programs", icon: "shield" },
+        { code: "HIPAA 45 CFR § 164.524", name: "Right to Health Records & Pricing", icon: "book" },
         { code: "EMTALA §1867", name: "Emergency Medical Treatment & Labor Act", icon: "alert" },
     ],
     auto: [
+        { code: "NY ISC § 2335", name: "Accident Surcharge Limit", icon: "alert" },
         { code: "CA Ins. §1861.02(b)", name: "Good Driver Discount Mandate", icon: "scale" },
         { code: "NAIC Model Act §4(7)", name: "Unfair Rate Discrimination Prohibition", icon: "shield" },
         { code: "FL §627.062", name: "Rate Standards — Actuarial Justification", icon: "file" },
@@ -22,6 +23,8 @@ const LEGAL_CODES: Record<string, { code: string; name: string; icon: "scale" | 
         { code: "15 USC §1681", name: "FCRA — Credit-Based Rating Review", icon: "book" },
     ],
     rent: [
+        { code: "CA AB 2943", name: "Junk Fee Ban", icon: "shield" },
+        { code: "FL SB 1592", name: "End Junk Fees for Renters Act", icon: "scale" },
         { code: "URLTA §1.402", name: "Uniform Residential Landlord Tenant Act", icon: "scale" },
         { code: "CA AB 2219", name: "Online Payment Convenience Fee Ban", icon: "shield" },
         { code: "NY RPL §235-e", name: "Prohibited Fee Surcharges", icon: "alert" },
@@ -49,12 +52,14 @@ const ICON_MAP = {
 interface ReasoningSidebarProps {
     category: BillCategory;
     isVisible: boolean;
+    lineItems?: FlaggedItem[];
 }
 
-export default function ReasoningSidebar({ category, isVisible }: ReasoningSidebarProps) {
+export default function ReasoningSidebar({ category, isVisible, lineItems = [] }: ReasoningSidebarProps) {
     if (!isVisible) return null;
 
     const codes = LEGAL_CODES[category] || LEGAL_CODES.medical;
+    const hasIssues = lineItems.length > 0;
 
     return (
         <motion.div
@@ -103,6 +108,27 @@ export default function ReasoningSidebar({ category, isVisible }: ReasoningSideb
                     );
                 })}
             </div>
+
+            {hasIssues && (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.6 }}
+                    className="mt-5 p-3 rounded-xl bg-orange-500/10 border border-orange-500/20"
+                >
+                    <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-orange-400 mt-0.5" />
+                        <div>
+                            <p className="text-[11px] font-bold text-orange-400 capitalize">
+                                Potential Violation
+                            </p>
+                            <p className="text-[10px] text-gray-400 mt-1 leading-relaxed">
+                                Depending on your jurisdiction, {lineItems.length} charge(s) detected as &quot;{lineItems[0].code}&quot; or excessive fees appear to be in violation of: <strong className="text-white">{codes[0].code}</strong>.
+                            </p>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
 
             {/* Footer */}
             <div className="mt-5 pt-4 border-t border-white/[0.06]">

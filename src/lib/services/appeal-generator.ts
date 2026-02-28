@@ -62,17 +62,15 @@ ${itemizedRows}
 
 This dispute is filed pursuant to:
 
-1. **No Surprises Act (2022)** — Federal law prohibiting surprise medical billing and requiring good-faith cost estimates. Charges exceeding the good-faith estimate by more than $400 are subject to the patient-provider dispute resolution process.
+1. **HIPAA 45 CFR § 164.524** — Right to access health records and fair billing information.
+2. **No Surprises Act (2022)** — Federal law prohibiting surprise medical billing and requiring good-faith cost estimates. Charges exceeding the good-faith estimate by more than $400 are subject to the patient-provider dispute resolution process.
+3. **Fair Debt Collection Practices Act (FDCPA)** — Protects consumers from unfair billing practices and grants the right to dispute medical debts within 30 days.
 
-2. **Fair Debt Collection Practices Act (FDCPA)** — Protects consumers from unfair billing practices and grants the right to dispute medical debts within 30 days.
-
-3. **State Consumer Protection Laws** — Most states prohibit "balance billing" for amounts above reasonable and customary charges. The billed amounts above materially exceed published fair pricing benchmarks.
-
-4. **CMS Medicare Fee Schedule Comparison** — The charges identified exceed the **Medicare-allowed amount by 130% or more**, a threshold widely recognized by healthcare economists as indicative of price gouging.
+This charge appears to be in violation of standard fair market pricing practices. The billed amounts above materially exceed published fair pricing benchmarks, including the **CMS Medicare Fee Schedule** which notes these items are marked up by 130% or more.
 
 ## Requested Resolution
 
-I respectfully request that you:
+I request a formal review of these charges. Specifically, I respectfully request that you:
 
 1. **Reduce each disputed charge** to the fair market price documented in the table above; or
 2. **Provide a written, itemized justification** for why each charge exceeds the CMS Medicare rate and regional averages by the margins shown.

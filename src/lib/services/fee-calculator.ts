@@ -4,7 +4,7 @@
 //   - $10 Quick Win: flat fee for small bills (≤$50 savings)
 // ──────────────────────────────────────────────────────────────
 
-import { createServerClient } from "@/lib/supabase";
+import { createServerClient } from "@/lib/supabase/server";
 
 const SUCCESS_FEE_RATE = 0.20; // 20% of savings
 const QUICK_WIN_THRESHOLD = 50; // If savings ≤ $50, use flat fee
