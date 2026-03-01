@@ -80,11 +80,14 @@ export default function DiagnosisScreen() {
     const smartFee = analysis ? calculateSmartFee(analysis.potentialSavings) : null;
     const activeMeta = CATEGORIES.find((c) => c.id === category);
 
-    // ─── Handle URL Query Params (Pricing Page Redirects) ──────────
+    // ─── Handle URL Query Params (Pricing Page Redirects & Auth Trigger) ──────────
     useEffect(() => {
         if (typeof window !== "undefined") {
             const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get("openPayment") === "true") {
+            const openPayment = urlParams.get("openPayment") === "true";
+            const authSuccess = urlParams.get("auth_success") === "true";
+
+            if (openPayment || authSuccess) {
                 const plan = urlParams.get("plan");
                 if (plan === "family_vault") setSelectedPlanAmount(49);
                 else if (plan === "defender") setSelectedPlanAmount(29);
@@ -95,6 +98,7 @@ export default function DiagnosisScreen() {
                 const url = new URL(window.location.href);
                 url.searchParams.delete("openPayment");
                 url.searchParams.delete("plan");
+                url.searchParams.delete("auth_success");
                 window.history.replaceState({}, document.title, url.toString());
             }
         }
