@@ -7,7 +7,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { analyzeBillText, getMonologueSteps } from "@/lib/services/analysis-engine";
+import { getMonologueSteps } from "@/lib/services/analysis-engine";
+import { analyzeByCategory } from "@/lib/services/analyze-bill";
+import type { BillCategory } from "@/lib/services/bill-categories";
+import { createNegotiation } from "@/lib/services/negotiation-service";
 import { calculateSuccessFee, updateUserLedger } from "@/lib/services/fee-calculator";
 
 // ─── Simulated OCR text for demo mode ────────────────────────
@@ -55,7 +58,14 @@ export async function POST(request: NextRequest) {
 
         // Parse request
         const body = await request.json();
-        const { billId, demoMode } = body as { billId?: string; demoMode?: boolean };
+        const { billId, demoMode, category, billText: customBillText } = body as { billId?: string; demoMode?: boolean; category: BillCategory; billText?: string };
+
+        if (!category) {
+            return NextResponse.json(
+                { error: "Category is required." },
+                { status: 400 }
+            );
+        }
 
         let billText: string;
         let billRecord: { id: string; user_id: string } | null = null;
@@ -112,33 +122,27 @@ export async function POST(request: NextRequest) {
 
             // Use existing raw text or simulate OCR
             // In production: call Gemini Vision API here
-            billText = bill.raw_text || DEMO_BILL_TEXT;
+            billText = customBillText || bill.raw_text || DEMO_BILL_TEXT;
         }
 
         // ─── Run Analysis Engine ───────────────────────────────
-        const analysis = analyzeBillText(billText);
+        const analysis = analyzeByCategory(billText, category);
         const feeCalc = calculateSuccessFee(analysis.potentialSavings);
 
-        // ─── Insert Negotiation Rows ───────────────────────────
-        if (analysis.lineItems.length > 0) {
-            const negotiations = analysis.lineItems.map((item) => ({
-                bill_id: billRecord!.id,
-                user_id: user.id,
-                cpt_code: item.code,
-                description: item.description,
-                billed_amount: item.billedAmount,
-                fair_price: item.fairPrice,
-                confidence: item.confidence,
-                status: "identified" as const,
-            }));
+        // ─── Create Negotiation and Premium Content ────────────
+        const { negotiation, error: negError } = await createNegotiation(
+            user.id,
+            analysis,
+            category,
+            billRecord!.id
+        );
 
-            const { error: negError } = await supabase
-                .from("negotiations")
-                .insert(negotiations);
-
-            if (negError) {
-                console.error("Failed to insert negotiations:", negError);
-            }
+        if (negError) {
+            console.error("Failed to create negotiation v2:", negError);
+            return NextResponse.json(
+                { error: "Analysis succeeded but failed to generate negotiation record." },
+                { status: 500 }
+            );
         }
 
         // ─── Update Bill Record ────────────────────────────────
@@ -169,7 +173,10 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             success: true,
             billId: billRecord!.id,
+            negotiationId: negotiation?.id,
             analysis: {
+                category: analysis.category,
+                disputeType: analysis.disputeType,
                 providerName: analysis.providerName,
                 totalBilled: analysis.totalBilled,
                 totalFairPrice: analysis.totalFairPrice,

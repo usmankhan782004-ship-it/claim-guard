@@ -8,7 +8,7 @@ import { unlockNegotiation } from "@/lib/services/negotiation-service";
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { negotiationId, demoMode } = body;
+        const { negotiationId, demoMode, sessionId } = body;
 
         // ─── Demo Mode: Create a negotiation + unlock it client-side ──
         if (demoMode) {
@@ -30,8 +30,32 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Authentication required" }, { status: 401 });
         }
 
-        if (!negotiationId) {
-            return NextResponse.json({ error: "negotiationId is required" }, { status: 400 });
+        if (!negotiationId || !sessionId) {
+            return NextResponse.json({ error: "negotiationId and sessionId are required" }, { status: 400 });
+        }
+
+        // ─── Secure Verification: Check payment completion ───────────
+        const { data: negotiation, error: negError } = await supabase
+            .from("negotiations_v2")
+            .select("bill_id")
+            .eq("id", negotiationId)
+            .eq("user_id", user.id)
+            .single();
+
+        if (negError || !negotiation) {
+            return NextResponse.json({ error: "Negotiation not found" }, { status: 404 });
+        }
+
+        const { data: payment, error: payError } = await supabase
+            .from("payments")
+            .select("status")
+            .eq("session_id", sessionId)
+            .eq("user_id", user.id)
+            .eq("bill_id", negotiation.bill_id)
+            .single();
+
+        if (payError || !payment || payment.status !== "completed") {
+            return NextResponse.json({ error: "Valid completed payment not found for this negotiation" }, { status: 403 });
         }
 
         // Flip the is_unlocked bit
