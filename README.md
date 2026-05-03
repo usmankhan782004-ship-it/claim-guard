@@ -30,3 +30,19 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - Frontend: Next.js (App Router), React, Tailwind CSS, Framer Motion
 - Backend & DB: Supabase (Auth, Storage, PostgreSQL with RLS)
 - Icons: Lucide React
+
+## SEO And Webmaster Setup
+
+Configure these environment variables before deploying:
+
+- `NEXT_PUBLIC_SITE_URL` - canonical public site URL, for example `https://claimguard.com`
+- `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` - Google Search Console verification token
+- `NEXT_PUBLIC_BING_SITE_VERIFICATION` - Bing Webmaster Tools verification token
+- `INDEXNOW_KEY` - IndexNow key used for `/{key}.txt` and URL submission
+
+After deployment:
+
+1. Add the Google verification token in Search Console and submit `https://your-domain/sitemap.xml`.
+2. Add the Bing verification token in Bing Webmaster Tools and submit the same sitemap.
+3. Confirm the IndexNow key file is reachable at `https://your-domain/{INDEXNOW_KEY}.txt`.
+4. Trigger URL submissions with `POST /api/indexnow` and a JSON body like `{"paths":["/","/pricing"]}`.

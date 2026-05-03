@@ -12,6 +12,7 @@ import { analyzeByCategory } from "@/lib/services/analyze-bill";
 import type { BillCategory } from "@/lib/services/bill-categories";
 import { createNegotiation } from "@/lib/services/negotiation-service";
 import { calculateSuccessFee, updateUserLedger } from "@/lib/services/fee-calculator";
+import { isSameOrigin } from "@/lib/request-security";
 
 // ─── Simulated OCR text for demo mode ────────────────────────
 // In production, this calls Gemini Vision to extract text from images/PDFs.
@@ -41,6 +42,10 @@ Total Charges:                                     $9,257.00
 
 export async function POST(request: NextRequest) {
     try {
+        if (!isSameOrigin(request)) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
         const supabase = await createServerClient();
 
         // Verify authentication

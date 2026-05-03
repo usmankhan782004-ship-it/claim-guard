@@ -6,9 +6,14 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
+import { isSameOrigin } from "@/lib/request-security";
 
 export async function POST(request: NextRequest) {
     try {
+        if (!isSameOrigin(request)) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
         const supabase = await createServerClient();
 
         // Verify authentication

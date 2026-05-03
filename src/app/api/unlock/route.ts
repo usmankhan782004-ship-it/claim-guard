@@ -1,17 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { unlockNegotiation } from "@/lib/services/negotiation-service";
+import { isSameOrigin } from "@/lib/request-security";
 
 // ─── POST /api/unlock — Flip is_unlocked and return premium content
 // In production, this would be called by a Lemon Squeezy webhook
 // after confirming payment. For now, it handles both demo and auth modes.
 export async function POST(req: NextRequest) {
     try {
+        if (!isSameOrigin(req)) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
         const body = await req.json();
         const { negotiationId, demoMode, sessionId } = body;
 
         // ─── Demo Mode: Create a negotiation + unlock it client-side ──
         if (demoMode) {
+            if (process.env.NODE_ENV === "production") {
+                return NextResponse.json(
+                    { error: "Demo unlock is disabled in production." },
+                    { status: 403 }
+                );
+            }
+
             return NextResponse.json({
                 success: true,
                 unlocked: true,
