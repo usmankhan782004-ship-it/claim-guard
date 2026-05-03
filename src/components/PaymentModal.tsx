@@ -85,7 +85,7 @@ export default function PaymentModal({
             const payData = await payRes.json();
             if (payData.success) {
                 setStep("success");
-                onSuccess?.(payData.payment);
+                onSuccess?.({ ...payData.payment, sessionId: sessionData.session.sessionId });
             } else throw new Error(payData.payment?.error || payData.error || "Payment failed");
         } catch (err) {
             setErrorMessage(err instanceof Error ? err.message : "Payment processing failed");

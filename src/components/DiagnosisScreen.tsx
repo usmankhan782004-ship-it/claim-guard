@@ -22,8 +22,8 @@ import WealthTicker from "./WealthTicker";
 import LiveAgentFeed from "./LiveAgentFeed";
 import ReasoningSidebar from "./ReasoningSidebar";
 import UrgencyTicker from "./UrgencyTicker";
-import { analyzeByCategory } from "@/lib/services/analyze-bill";
-import { generateAppealByCategory, generateInstructionsByCategory } from "@/lib/services/appeal-router";
+
+
 import { calculateSmartFee } from "@/lib/services/fee-calc";
 import { createClient } from "@/lib/supabase/client";
 import { DEMO_BILLS, CATEGORIES } from "@/lib/services/bill-categories";
@@ -75,6 +75,7 @@ export default function DiagnosisScreen() {
     const [selectedPlanAmount, setSelectedPlanAmount] = useState<number | null>(null);
     const [billId] = useState(() => crypto.randomUUID());
     const [billText, setBillText] = useState("");
+    const [negotiationId, setNegotiationId] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const smartFee = analysis ? calculateSmartFee(analysis.potentialSavings) : null;
@@ -105,24 +106,46 @@ export default function DiagnosisScreen() {
     }, []);
 
     // ─── Run Analysis (Demo or Uploaded) ─────────────────────────
-    const runAnalysis = useCallback((text: string) => {
+    const runAnalysis = useCallback(async (text: string) => {
         if (!category || !text.trim()) return;
         setScreen("scanning");
         setAnalysis(null);
         setAppealLetter("");
+        setSubmissionInstructions("");
         setIsUnlocked(false);
+        setNegotiationId(null);
 
-        const result = analyzeByCategory(text, category);
-        setAnalysis(result);
+        try {
+            const res = await fetch("/api/analyze-bill", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ category, billText: text, demoMode: true }),
+            });
 
-        const letter = generateAppealByCategory(category, result);
-        setAppealLetter(letter);
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                console.error("Analysis failed:", errData);
+                if (res.status === 401) {
+                    window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+                    return;
+                }
+                setScreen("idle");
+                return;
+            }
 
-        const instructions = generateInstructionsByCategory(
-            category,
-            result.providerName || "Provider"
-        );
-        setSubmissionInstructions(instructions);
+            const data = await res.json();
+            if (data.success && data.analysis) {
+                setAnalysis(data.analysis);
+                if (data.negotiationId) {
+                    setNegotiationId(data.negotiationId);
+                }
+            } else {
+                setScreen("idle");
+            }
+        } catch (error) {
+            console.error("Error running analysis:", error);
+            setScreen("idle");
+        }
     }, [category]);
 
     const handleRunDemo = useCallback(() => {
@@ -174,11 +197,42 @@ export default function DiagnosisScreen() {
         setIsPaymentModalOpen(true);
     }, []);
 
-    const handlePaymentSuccess = useCallback(() => {
-        setIsUnlocked(true);
-        setIsUnlocking(false);
+    const handlePaymentSuccess = useCallback(async (paymentResult: Record<string, unknown>) => {
         setIsPaymentModalOpen(false);
-    }, []);
+        if (!negotiationId || !paymentResult.sessionId) {
+            console.error("Missing negotiationId or sessionId after payment");
+            return;
+        }
+
+        setIsUnlocking(true);
+        try {
+            const res = await fetch("/api/unlock", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    negotiationId,
+                    sessionId: paymentResult.sessionId,
+                }),
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success && data.unlocked && data.premiumContent) {
+                    setIsUnlocked(true);
+                    setAppealLetter(data.premiumContent.final_appeal_letter_markdown);
+                    setSubmissionInstructions(data.premiumContent.submission_instructions);
+                } else {
+                    console.error("Failed to unlock premium content:", data.error);
+                }
+            } else {
+                console.error("Unlock request failed.");
+            }
+        } catch (error) {
+            console.error("Error unlocking:", error);
+        } finally {
+            setIsUnlocking(false);
+        }
+    }, [negotiationId]);
 
     return (
         <div className="min-h-screen p-4 md:p-8 max-w-7xl mx-auto">

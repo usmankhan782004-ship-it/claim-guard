@@ -5,8 +5,9 @@
 // ──────────────────────────────────────────────────────────────
 
 import { createServerClient } from "@/lib/supabase/server";
-import type { AnalysisResult } from "./analysis-engine";
-import { generateAppealLetter, generateSubmissionInstructions } from "./appeal-generator";
+
+import { generateAppealByCategory, generateInstructionsByCategory } from "./appeal-router";
+import type { BillCategory, UnifiedAnalysisResult } from "./bill-categories";
 
 const SUCCESS_FEE_RATE = 0.20;
 
@@ -14,7 +15,7 @@ export interface NegotiationRecord {
     id: string;
     user_id: string;
     bill_id: string | null;
-    bill_analysis: AnalysisResult;
+    bill_analysis: UnifiedAnalysisResult;
     total_billed: number;
     potential_savings: number;
     success_fee: number;
@@ -41,7 +42,8 @@ export interface PremiumContent {
 // ─── Create a negotiation + premium content from analysis ────
 export async function createNegotiation(
     userId: string,
-    analysis: AnalysisResult,
+    analysis: UnifiedAnalysisResult,
+    category: BillCategory,
     billId?: string
 ): Promise<{ negotiation: NegotiationRecord | null; error?: string }> {
     try {
@@ -72,20 +74,8 @@ export async function createNegotiation(
         }
 
         // Generate and store premium content (appeal letter)
-        const appealLetter = generateAppealLetter({
-            patientName: "Patient Name",
-            providerName: analysis.providerName || "Healthcare Provider",
-            dateOfService: new Date().toLocaleDateString("en-US"),
-            accountNumber: `CG-${Date.now().toString(36).toUpperCase()}`,
-            lineItems: analysis.lineItems,
-            totalBilled: analysis.totalBilled,
-            totalFairPrice: analysis.totalFairPrice,
-            potentialSavings: analysis.potentialSavings,
-        });
-
-        const submissionInstructions = generateSubmissionInstructions(
-            analysis.providerName || "Healthcare Provider"
-        );
+        const appealLetter = generateAppealByCategory(category, analysis);
+        const submissionInstructions = generateInstructionsByCategory(category, analysis.providerName || "Provider");
 
         const { error: contentError } = await supabase
             .from("premium_content")
